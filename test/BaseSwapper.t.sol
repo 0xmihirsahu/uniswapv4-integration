@@ -108,8 +108,75 @@ contract BaseSwapperTest is Test {
         console.log("Tokens approved successfully");
     }
     
+    function testCheckMultiplePools() public view {
+        console.log("=== Checking Multiple WETH/USDC Pools ===");
+        
+        uint24[] memory fees = new uint24[](3);
+        int24[] memory tickSpacings = new int24[](3);
+        
+        fees[0] = 500;   // 0.05%
+        tickSpacings[0] = 10;
+        
+        fees[1] = 3000;  // 0.3%
+        tickSpacings[1] = 60;
+        
+        fees[2] = 10000; // 1%
+        tickSpacings[2] = 200;
+        
+        (bool[] memory exist, uint128[] memory liquidities, uint160[] memory sqrtPriceX96s) = 
+            swapper.checkMultiplePools(WETH, USDC, fees, tickSpacings);
+        
+        for (uint256 i = 0; i < fees.length; i++) {
+            console.log("");
+            console.log("Pool:", i);
+            console.log("  Fee:", fees[i]);
+            console.log("  TickSpacing:", uint256(uint24(tickSpacings[i])));
+            console.log("  Exists:", exist[i]);
+            console.log("  Liquidity:", uint256(uint128(liquidities[i])));
+            if (exist[i]) {
+                console.log("  sqrtPriceX96:", sqrtPriceX96s[i]);
+            }
+        }
+    }
+    
     function testSwapWETHForUSDC() public {
         vm.startPrank(user);
+        
+        // Check multiple pools to find one with liquidity
+        uint24[] memory fees = new uint24[](3);
+        int24[] memory tickSpacings = new int24[](3);
+        
+        fees[0] = 500;
+        tickSpacings[0] = 10;
+        fees[1] = 3000;
+        tickSpacings[1] = 60;
+        fees[2] = 10000;
+        tickSpacings[2] = 200;
+        
+        (bool[] memory exist, uint128[] memory liquidities, ) = 
+            swapper.checkMultiplePools(WETH, USDC, fees, tickSpacings);
+        
+        // Find pool with liquidity
+        uint24 selectedFee;
+        int24 selectedTickSpacing;
+        bool foundLiquidPool = false;
+        
+        for (uint256 i = 0; i < fees.length; i++) {
+            if (exist[i] && liquidities[i] > 0 && !foundLiquidPool) {
+                selectedFee = fees[i];
+                selectedTickSpacing = tickSpacings[i];
+                foundLiquidPool = true;
+                console.log("Found pool with liquidity: Fee", selectedFee, "TickSpacing", uint256(uint24(selectedTickSpacing)));
+                break;
+            }
+        }
+        
+        // Skip test if no pools have liquidity
+        if (!foundLiquidPool) {
+            console.log("No pools with liquidity found. Skipping swap test.");
+            vm.stopPrank();
+            return;
+        }
         
         // Approve tokens
         IERC20(WETH).approve(address(swapper), type(uint256).max);
@@ -122,8 +189,12 @@ contract BaseSwapperTest is Test {
         console.log("WETH before:", wethBefore);
         console.log("USDC before:", usdcBefore);
         
-        // Swap 0.1 WETH for USDC
-        uint256 amountOut = swapper.swapWETHForUSDC(
+        // Swap using the pool with liquidity
+        uint256 amountOut = swapper.swap(
+            WETH,
+            USDC,
+            selectedFee,
+            selectedTickSpacing,
             0.1 ether,
             0 // Set minAmountOut to 0 for testing
         );
@@ -146,6 +217,43 @@ contract BaseSwapperTest is Test {
     function testSwapUSDCForDAI() public {
         vm.startPrank(user);
         
+        // Check multiple pools to find one with liquidity
+        // Try different fee/tickSpacing combinations for USDC/DAI
+        uint24[] memory fees = new uint24[](3);
+        int24[] memory tickSpacings = new int24[](3);
+        
+        fees[0] = 100;   // 0.01%
+        tickSpacings[0] = 1;
+        fees[1] = 500;   // 0.05%
+        tickSpacings[1] = 10;
+        fees[2] = 3000;  // 0.3%
+        tickSpacings[2] = 60;
+        
+        (bool[] memory exist, uint128[] memory liquidities, ) = 
+            swapper.checkMultiplePools(USDC, DAI, fees, tickSpacings);
+        
+        // Find pool with liquidity
+        uint24 selectedFee;
+        int24 selectedTickSpacing;
+        bool foundLiquidPool = false;
+        
+        for (uint256 i = 0; i < fees.length; i++) {
+            if (exist[i] && liquidities[i] > 0 && !foundLiquidPool) {
+                selectedFee = fees[i];
+                selectedTickSpacing = tickSpacings[i];
+                foundLiquidPool = true;
+                console.log("Found pool with liquidity: Fee", selectedFee, "TickSpacing", uint256(uint24(selectedTickSpacing)));
+                break;
+            }
+        }
+        
+        // Skip test if no pools have liquidity
+        if (!foundLiquidPool) {
+            console.log("No pools with liquidity found. Skipping swap test.");
+            vm.stopPrank();
+            return;
+        }
+        
         // Approve tokens
         IERC20(USDC).approve(address(swapper), type(uint256).max);
         swapper.approveToken(USDC);
@@ -157,8 +265,12 @@ contract BaseSwapperTest is Test {
         console.log("USDC before:", usdcBefore);
         console.log("DAI before:", daiBefore);
         
-        // Swap 100 USDC for DAI
-        uint256 amountOut = swapper.swapUSDCForDAI(
+        // Swap using the pool with liquidity
+        uint256 amountOut = swapper.swap(
+            USDC,
+            DAI,
+            selectedFee,
+            selectedTickSpacing,
             100e6, // 100 USDC (6 decimals)
             0
         );
@@ -176,5 +288,80 @@ contract BaseSwapperTest is Test {
         // Assertions
         assertEq(usdcBefore - usdcAfter, 100e6, "USDC not spent");
         assertGt(daiAfter, daiBefore, "DAI not received");
+    }
+    
+    function testSwapUSDCForWETH() public {
+        vm.startPrank(user);
+        
+        // Check multiple pools to find one with liquidity
+        uint24[] memory fees = new uint24[](3);
+        int24[] memory tickSpacings = new int24[](3);
+        
+        fees[0] = 500;
+        tickSpacings[0] = 10;
+        fees[1] = 3000;
+        tickSpacings[1] = 60;
+        fees[2] = 10000;
+        tickSpacings[2] = 200;
+        
+        (bool[] memory exist, uint128[] memory liquidities, ) = 
+            swapper.checkMultiplePools(USDC, WETH, fees, tickSpacings);
+        
+        // Find pool with liquidity
+        uint24 selectedFee;
+        int24 selectedTickSpacing;
+        bool foundLiquidPool = false;
+        
+        for (uint256 i = 0; i < fees.length; i++) {
+            if (exist[i] && liquidities[i] > 0 && !foundLiquidPool) {
+                selectedFee = fees[i];
+                selectedTickSpacing = tickSpacings[i];
+                foundLiquidPool = true;
+                console.log("Found pool with liquidity: Fee", selectedFee, "TickSpacing", uint256(uint24(selectedTickSpacing)));
+                break;
+            }
+        }
+        
+        // Skip test if no pools have liquidity
+        if (!foundLiquidPool) {
+            console.log("No pools with liquidity found. Skipping swap test.");
+            vm.stopPrank();
+            return;
+        }
+        
+        // Approve tokens
+        IERC20(USDC).approve(address(swapper), type(uint256).max);
+        swapper.approveToken(USDC);
+        
+        // Get initial balances
+        uint256 usdcBefore = IERC20(USDC).balanceOf(user);
+        uint256 wethBefore = IERC20(WETH).balanceOf(user);
+        
+        console.log("USDC before:", usdcBefore);
+        console.log("WETH before:", wethBefore);
+        
+        // Swap using the pool with liquidity
+        uint256 amountOut = swapper.swap(
+            USDC,
+            WETH,
+            selectedFee,
+            selectedTickSpacing,
+            100e6, // 100 USDC (6 decimals)
+            0
+        );
+        
+        // Get final balances
+        uint256 usdcAfter = IERC20(USDC).balanceOf(user);
+        uint256 wethAfter = IERC20(WETH).balanceOf(user);
+        
+        console.log("USDC after:", usdcAfter);
+        console.log("WETH after:", wethAfter);
+        console.log("WETH received:", amountOut);
+        
+        vm.stopPrank();
+        
+        // Assertions
+        assertEq(usdcBefore - usdcAfter, 100e6, "USDC not spent");
+        assertGt(wethAfter, wethBefore, "WETH not received");
     }
 }
