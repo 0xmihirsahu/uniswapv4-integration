@@ -13,7 +13,7 @@ contract InteractScript is Script {
         BaseSwapper swapper = BaseSwapper(swapperAddress);
         address user = vm.addr(privateKey);
         
-        console.log("=== Swap WETH for USDC ===");
+        console.log("=== Swap USDC for WETH ===");
         console.log("User:", user);
         console.log("Swapper:", swapperAddress);
         
@@ -27,18 +27,18 @@ contract InteractScript is Script {
         console.log("WETH before:", wethBefore);
         console.log("USDC before:", usdcBefore);
         
-        // Approve WETH
+        // Approve USDC
         console.log("");
-        console.log("Approving WETH...");
-        IERC20(swapper.WETH()).approve(address(swapper), type(uint256).max);
-        swapper.approveToken(swapper.WETH());
+        console.log("Approving USDC...");
+        IERC20(swapper.USDC()).approve(address(swapper), type(uint256).max);
+        swapper.approveToken(swapper.USDC());
         
-        // Swap 0.0001 WETH for USDC
+        // Swap 1 USDC for WETH (1 USDC = 1e6)
         console.log("");
-        console.log("Swapping 0.0001 WETH for USDC...");
+        console.log("Swapping 1 USDC for WETH...");
         
-        uint256 amountOut = swapper.swapWETHForUSDC(
-            0.0001 ether,
+        uint256 amountOut = swapper.swapUSDCForWETH(
+            1e6, // 1 USDC
             0 // No slippage protection for testing
         );
         
@@ -50,8 +50,8 @@ contract InteractScript is Script {
         console.log("=== Swap Complete ===");
         console.log("WETH after:", wethAfter);
         console.log("USDC after:", usdcAfter);
-        console.log("WETH spent:", wethBefore - wethAfter);
-        console.log("USDC received:", usdcAfter - usdcBefore);
+        console.log("USDC spent:", usdcBefore - usdcAfter);
+        console.log("WETH received:", wethAfter - wethBefore);
         console.log("Amount out:", amountOut);
         
         vm.stopBroadcast();
