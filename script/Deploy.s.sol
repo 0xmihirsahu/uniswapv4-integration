@@ -7,8 +7,8 @@ import "../src/BaseSwapper.sol";
 contract DeployScript is Script {
     function run() external {
         // Base mainnet addresses
+        address UNIVERSAL_ROUTER = 0x6fF5693b99212Da76ad316178A184AB56D299b43;
         address POOL_MANAGER = 0x498581fF718922c3f8e6A244956aF099B2652b2b;
-        address POSITION_MANAGER = 0x7C5f5A4bBd8fD63184577525326123B519429bDc;
         address PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
         
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -16,8 +16,8 @@ contract DeployScript is Script {
         vm.startBroadcast(deployerPrivateKey);
         
         BaseSwapper swapper = new BaseSwapper(
+            UNIVERSAL_ROUTER, 
             POOL_MANAGER,
-            POSITION_MANAGER,
             PERMIT2
         );
         
