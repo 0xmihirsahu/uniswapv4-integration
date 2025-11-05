@@ -1,66 +1,51 @@
-## Foundry
+# Uniswap V4 Swapper for Base
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+A simple Uniswap V4 swapping contract for WETH/USDC and USDC/DAI on Base mainnet using the Universal Router.
 
-Foundry consists of:
+## Setup
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+1. Install dependencies:
+```bash
+forge install
+```
 
-## Documentation
+2. Set environment variables:
+```bash
+export PRIVATE_KEY=your_private_key
+export SWAPPER_ADDRESS=your_deployed_swapper_address  # Set after deployment
+```
 
-https://book.getfoundry.sh/
-
-## Usage
+## Commands
 
 ### Build
-
-```shell
-$ forge build
+```bash
+forge build
 ```
 
 ### Test
+```bash
+# Test on Base mainnet fork
+forge test --rpc-url base
 
-```shell
-$ forge test
-```
-
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
+# Test specific function
+forge test --match-test testCheckMultiplePools --rpc-url base
 ```
 
 ### Deploy
-
-```shell
-$ forge script script/Deploy.s.sol --rpc-url base --broadcast --verify   
+```bash
+forge script script/Deploy.s.sol --rpc-url base --broadcast --verify
 ```
 
-### Cast
-
-```shell
-$ cast <subcommand>
+### Interact
+```bash
+# Swap USDC for WETH (automatically finds pool with liquidity)
+forge script script/Interact.s.sol --rpc-url base --broadcast
 ```
 
-### Help
 
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+## Contract Addresses (Base Mainnet)
+- **BaseSwapper**: `0xb7BF1cF19Df884dFC1715467d09c6F0c76D9Dc06`
+
+- **Universal Router**: `0x6fF5693b99212Da76ad316178A184AB56D299b43`
+- **PoolManager**: `0x498581fF718922c3f8e6A244956aF099B2652b2b`
+- **Permit2**: `0x000000000022D473030F116dDEE9F6B43aC78BA3`
