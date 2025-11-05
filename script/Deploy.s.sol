@@ -15,10 +15,14 @@ contract DeployScript is Script {
         
         vm.startBroadcast(deployerPrivateKey);
         
+        // Set the deployer as the owner
+        address owner = msg.sender;
+        
         BaseSwapper swapper = new BaseSwapper(
             UNIVERSAL_ROUTER, 
             POOL_MANAGER,
-            PERMIT2
+            PERMIT2,
+            owner
         );
         
         console.log("BaseSwapper deployed at:", address(swapper));

@@ -26,11 +26,12 @@ contract BaseSwapperTest is Test {
         // Fork Base mainnet
         vm.createSelectFork("base");
         
-        // Deploy swapper
+        // Deploy swapper with this contract as owner
         swapper = new BaseSwapper(
             UNIVERSAL_ROUTER,
             POOL_MANAGER,
-            PERMIT2
+            PERMIT2,
+            address(this) // Set test contract as owner
         );
         
         // Give user some tokens for testing
@@ -56,13 +57,15 @@ contract BaseSwapperTest is Test {
                 uint160 sqrtPriceX96,
                 int24 tick,
                 uint24 protocolFee,
-                uint24 lpFee
+                uint24 lpFee,
+                uint128 liquidity
             ) = swapper.getPoolInfo(key);
             
             console.log("  sqrtPriceX96:", sqrtPriceX96);
             console.log("  tick:", uint256(int256(tick)));
             console.log("  protocolFee:", protocolFee);
             console.log("  lpFee:", lpFee);
+            console.log("  liquidity:", uint256(uint128(liquidity)));
         }
     }
     
@@ -83,10 +86,13 @@ contract BaseSwapperTest is Test {
                 uint160 sqrtPriceX96,
                 int24 tick,
                 ,
+                ,
+                uint128 liquidity
             ) = swapper.getPoolInfo(key);
             
             console.log("  sqrtPriceX96:", sqrtPriceX96);
             console.log("  tick:", uint256(int256(tick)));
+            console.log("  liquidity:", uint256(uint128(liquidity)));
         }
     }
     
